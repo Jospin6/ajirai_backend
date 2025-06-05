@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from app.auth import auth, schemas
+from app.auth.dependencies import get_current_user
 from app.core.security import verify_password
 from app.schemas.user_schema import UserCreate, UserRead
 from app.controllers.user import create_user, delete_user, get_all_users, get_user_by_email, get_user_by_id, update_user
@@ -14,7 +15,9 @@ def register_user(user: UserCreate, session: Session = Depends(get_session)):
     existing = get_user_by_email(user.email, session)
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
-    return create_user(user, session)
+    create_user(user, session)
+    access_token = auth.create_access_token({"sub": user["email"]})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/{user_id}", response_model=UserRead)
 def get_user(user_id: UUID, session: Session = Depends(get_session)):
@@ -45,16 +48,9 @@ def delete_a_user(user_id: UUID, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail=str(e))
     return {"detail": "User deleted successfully"}
 
-@router.get("/me", response_model=UserRead)
-def get_current_user(session: Session = Depends(get_session)):
-    # Assuming you have a way to get the current user's ID from the session or request context
-    current_user_id = session.get("current_user_id")
-    if not current_user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    user = get_user_by_id(current_user_id, session)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+@router.get("/me")
+def read_me(current_user=Depends(get_current_user)):
+    return {"user": current_user}
 
 @router.post("/login", response_model=schemas.Token)
 def login(form_data: schemas.UserLogin, session: Session = Depends(get_session)):
