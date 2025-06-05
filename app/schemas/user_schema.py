@@ -10,3 +10,5 @@ class UserRead(BaseModel):
     id: UUID
     email: EmailStr
     username: str
+    role: str
+    is_active: bool

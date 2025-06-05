@@ -10,13 +10,13 @@ from app.config.db import get_session
 
 router = APIRouter()
 
-@router.post("/", response_model=UserRead)
+@router.post("/", response_model=schemas.Token)
 def register_user(user: UserCreate, session: Session = Depends(get_session)):
     existing = get_user_by_email(user.email, session)
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
     create_user(user, session)
-    access_token = auth.create_access_token({"sub": user["email"]})
+    access_token = auth.create_access_token({"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/{user_id}", response_model=UserRead)
@@ -57,5 +57,5 @@ def login(form_data: schemas.UserLogin, session: Session = Depends(get_session))
     user = get_user_by_email(form_data.email, session)
     if not user or not verify_password(form_data.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    access_token = auth.create_access_token({"sub": user["email"]})
+    access_token = auth.create_access_token({"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
