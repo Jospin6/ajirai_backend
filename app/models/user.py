@@ -1,9 +1,12 @@
+import uuid
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from uuid import UUID
 
 class User(SQLModel, table=True):
-    id: Optional[UUID] = Field(default=None, primary_key=True)
+    id: UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     email: str = Field(index=True, unique=True)
-    username: str
+    username: Optional[str] = None
+    avatar: Optional[str] = None
+    sub: Optional[str] = None
     hashed_password: str

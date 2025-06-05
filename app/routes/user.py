@@ -11,4 +11,4 @@ def register_user(user: UserCreate, session: Session = Depends(get_session)):
     existing = get_user_by_email(user.email, session)
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
-    return create_user(user)
+    return create_user(user, session)
